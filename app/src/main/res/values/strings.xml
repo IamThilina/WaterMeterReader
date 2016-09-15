@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">WaterMeterReader</string>
+    <string name="btn_launch_edgeDetector">Edge Detector</string>
+    <string name="btn_launch_drawContours">Draw Contours</string>
+    <string name="btn_launch_rotateImage">Rotate Image</string>
+</resources>
