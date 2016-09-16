@@ -3,4 +3,11 @@
     <string name="btn_launch_edgeDetector">Edge Detector</string>
     <string name="btn_launch_drawContours">Draw Contours</string>
     <string name="btn_launch_rotateImage">Rotate Image</string>
+    <string name="btn_launch_camera">Open Camera</string>
+    <string name="picture">Capture</string>
+    <string name="description_info">Info</string>
+    <string name="request_permission">This application needs camera permission.</string>
+    <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

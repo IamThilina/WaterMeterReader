@@ -14,6 +14,9 @@ import android.widget.TextView;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -35,6 +38,26 @@ import java.util.List;
 
 public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
 
+    private static final String TAG = "DrawContoursActivity";
+
+    private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS:
+                {
+                    Log.i(TAG, "OpenCV loaded successfully");
+                    // Create and set View
+                    //setContentView(R.layout.main);
+                } break;
+                default:
+                {
+                    super.onManagerConnected(status);
+                } break;
+            }
+        }
+    };
+
     private ImageView contour_image_view;
     private Bitmap originalImage;
     private static final int ratio = 2;
@@ -49,6 +72,13 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_draw_contours);
+        Log.i(TAG, "Trying to load OpenCV library");
+        if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mOpenCVCallBack))
+        {
+            Log.e(TAG, "Cannot connect to OpenCV Manager");
+        } else{
+            Log.i(TAG, "Connected to OpenCV Manager");
+        }
         sb_threshold = (AppCompatSeekBar)findViewById(R.id.sb_edge_threshold);
         thresholdText = (TextView) findViewById(R.id.text_edge_threshold);
         extractedText = (TextView) findViewById(R.id.text_extracted_text);
@@ -64,7 +94,8 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
         String language = "eng";
         mTess = new TessBaseAPI();
         mTess.init(datapath, language);
-
+        mTess.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "0123456789");
+        mTess.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz");
         drawContours(originalImage);
     }
 
@@ -197,7 +228,7 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
             Imgproc.drawContours(rgba, digitContours, contourIdx, color, 1);
             Rect boundRect = Imgproc.boundingRect(digitContours.get(contourIdx));
             crop = new Mat(edges, boundRect);
-            Imgproc.resize(crop, crop, new Size(crop.width()*20, crop.height()*20));
+            Imgproc.resize(crop, crop, new Size(crop.width()*8, crop.height()*8));
             croppedBitMap = Bitmap.createBitmap(crop.cols(), crop.rows(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(crop, croppedBitMap);
             ImageView imgView = new ImageView(this);

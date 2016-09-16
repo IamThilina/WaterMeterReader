@@ -5,10 +5,14 @@ import android.graphics.BitmapFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.AppCompatSeekBar;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -16,6 +20,27 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 public class EdgeDetector extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
+
+    private static final String TAG = "EdgeDetectorActivity";
+
+    private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS:
+                {
+                    Log.i(TAG, "OpenCV loaded successfully");
+                    // Create and set View
+                    //setContentView(R.layout.main);
+                } break;
+                default:
+                {
+                    super.onManagerConnected(status);
+                } break;
+            }
+        }
+    };
+
 
     private ImageView edgedetected_image_view;
     private Bitmap originalImage;
@@ -27,6 +52,13 @@ public class EdgeDetector extends AppCompatActivity implements SeekBar.OnSeekBar
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edge_detector);
+        Log.i(TAG, "Trying to load OpenCV library");
+        if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mOpenCVCallBack))
+        {
+            Log.e(TAG, "Cannot connect to OpenCV Manager");
+        } else{
+            Log.i(TAG, "Connected to OpenCV Manager");
+        }
         originalImage = BitmapFactory.decodeResource(getResources(),R.drawable.clear_far);
         sb_threshold = (AppCompatSeekBar)findViewById(R.id.sb_threshold);
         sb_threshold.setOnSeekBarChangeListener(this);
