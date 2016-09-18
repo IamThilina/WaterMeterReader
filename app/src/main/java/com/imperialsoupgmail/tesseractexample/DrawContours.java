@@ -25,6 +25,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
@@ -61,7 +62,7 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
     private ImageView contour_image_view;
     private Bitmap originalImage;
     private static final int ratio = 2;
-    private static int threshold = 130;
+    private static int threshold = 100;
     private AppCompatSeekBar sb_threshold;
     private TextView thresholdText;
     private TextView extractedText;
@@ -153,6 +154,8 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
 
         // convert to gray scale
         Imgproc.cvtColor(rgba, edges, Imgproc.COLOR_RGB2GRAY, 4);
+        // blurring
+        //Imgproc.blur( edges, edges, new Size(3,3) );
 
         // detect edges using canny algorithm
         Imgproc.Canny(edges, edges, threshold, threshold*ratio);
@@ -165,7 +168,7 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
         Mat edgeCopy = edges.clone();
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierarchy = new Mat();
-        Imgproc.findContours(edgeCopy, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(edgeCopy, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
         // isolate the digits
         List<MatOfPoint> filteredContours = new ArrayList<MatOfPoint>();
@@ -176,11 +179,16 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
         for ( int contourIdx=0; contourIdx < contours.size(); contourIdx++ )
         {
             Rect boundRect = Imgproc.boundingRect(contours.get(contourIdx));
-            if(/*boundRect.area() >= 150 && boundRect.area() <= 300 && */boundRect.width > 5 && boundRect.width < 30 && boundRect.height < 30 && boundRect.height >= boundRect.width*1.7)  // Minimum size allowed for consideration
+            if(boundRect.width > 5 && boundRect.width < 30 && boundRect.height < 30 && boundRect.height >= boundRect.width*1.7)  // Minimum size allowed for consideration
             {
                 filteredContours.add(contours.get(contourIdx));
                 boundingRects.add(boundRect);
             }
+            /*if(boundRect.width > 10 && boundRect.width < 90 && boundRect.height < 90 && boundRect.height > 10)  // Minimum size allowed for consideration
+            {
+                filteredContours.add(contours.get(contourIdx));
+                boundingRects.add(boundRect);
+            }*/
         }
 
         // extract the maximum aligned contours
@@ -197,8 +205,11 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
             for ( int j=0; j < filteredContours.size(); j++ )
             {
                 targetRect = boundingRects.get(j);
-                if(((targetRect.tl().y >= referenceRect.tl().y) && (targetRect.tl().y <= referenceRect.tl().y+height)) || ((targetRect.br().y >= referenceRect.tl().y) && (targetRect.br().y <= referenceRect.tl().y+height))){
-                    tempContours.add(filteredContours.get(j));
+                if(i != j){
+                    if(((targetRect.tl().y >= referenceRect.tl().y) && (targetRect.tl().y <= referenceRect.tl().y+height)) || ((targetRect.br().y >= referenceRect.tl().y) && (targetRect.br().y <= referenceRect.tl().y+height))){
+                        tempContours.add(filteredContours.get(j));
+                    }
+
                 }
             }
             if(tempContours.size() > digitContours.size())
@@ -213,9 +224,10 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
         Bitmap croppedBitMap;
         extractedText.setText(String.valueOf(digitContours.size()));
         ViewGroup layout = (ViewGroup) findViewById(R.id.filtered_rect_view);
+        layout.removeAllViews();
         for ( int contourIdx=0; contourIdx < digitContours.size(); contourIdx++ )
         {
-            //Imgproc.drawContours(rgba, digitContours, contourIdx, color, 1);
+            Imgproc.drawContours(rgba, digitContours, contourIdx, color, 1);
             /*Rect boundRect = Imgproc.boundingRect(digitContours.get(contourIdx));
             Imgproc.rectangle(edges, boundRect.br(),boundRect.tl(), color, 1);
             crop = new Mat(edges, boundRect);
@@ -225,10 +237,11 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
             ImageView imgView = new ImageView(this);
             imgView.setImageBitmap(croppedBitMap);
             layout.addView(imgView);*/
-            Imgproc.drawContours(rgba, digitContours, contourIdx, color, 1);
+            //Imgproc.drawContours(rgba, digitContours, contourIdx, color, 1);
             Rect boundRect = Imgproc.boundingRect(digitContours.get(contourIdx));
+            //Imgproc.rectangle(rgba, boundRect.br(),boundRect.tl(), color, 1);
             crop = new Mat(edges, boundRect);
-            Imgproc.resize(crop, crop, new Size(crop.width()*8, crop.height()*8));
+            Imgproc.resize(crop, crop, new Size(crop.width()*6, crop.height()*6));
             croppedBitMap = Bitmap.createBitmap(crop.cols(), crop.rows(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(crop, croppedBitMap);
             ImageView imgView = new ImageView(this);
@@ -237,7 +250,6 @@ public class DrawContours extends AppCompatActivity implements SeekBar.OnSeekBar
             mTess.setImage(croppedBitMap);
             recognizedText += mTess.getUTF8Text();
         }
-        //Imgproc.rectangle(rgba, Imgproc.boundingRect(digitContours.get(15)).br(), Imgproc.boundingRect(digitContours.get(digitContours.size()-1)).tl(), color, 1);
 
 
         //Imgproc.resize(rgba, rgba, new Size(rgba.width()*2, rgba.height()*2));
